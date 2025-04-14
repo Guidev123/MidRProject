@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using MidR.Implementation;
 using MidR.Interfaces;
+using System;
+using System.Linq;
 using System.Reflection;
 
 namespace MidR.DependencyInjection
