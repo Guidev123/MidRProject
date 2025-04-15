@@ -9,46 +9,64 @@ namespace MidR.DependencyInjection
 {
     public static class ServiceCollectionExtensions
     {
-        public static void AddMidR(this IServiceCollection services, params object[] args)
+        public static IServiceCollection AddMidR(
+        this IServiceCollection services,
+        params object[] args)
         {
             var assemblies = ResolveAssemblies(args);
 
-            services.AddSingleton<IMediator, Mediator>();
+            services.AddScoped<IMediator, Mediator>();
 
-            RegisterHandlers(services, assemblies, typeof(IRequestHandler<,>));
             RegisterHandlers(services, assemblies, typeof(INotificationHandler<>));
+            RegisterHandlers(services, assemblies, typeof(IRequestHandler<,>));
+
+            return services;
         }
 
         private static Assembly[] ResolveAssemblies(object[] args)
         {
-            if (args.All(a => a is string))
+            if (args == null || args.Length == 0)
             {
-                var prefixes = args.Cast<string>().ToArray();
-                return AppDomain.CurrentDomain.GetAssemblies()
-                    .Where(a => !a.IsDynamic
-                    && !string.IsNullOrWhiteSpace(a.FullName)
-                    && prefixes.Any(p => a.FullName.StartsWith(p)))
+                return AppDomain.CurrentDomain
+                    .GetAssemblies()
+                    .Where(a => !a.IsDynamic && !string.IsNullOrWhiteSpace(a.FullName))
                     .ToArray();
             }
 
-            throw new ArgumentException("Invalid arguments. Provide either string prefixes.");
+            if (args.All(a => a is Assembly))
+                return args.Cast<Assembly>().ToArray();
+
+            if (args.All(a => a is string))
+            {
+                var prefixes = args.Cast<string>().ToArray();
+                return AppDomain.CurrentDomain
+                    .GetAssemblies()
+                    .Where(a =>
+                        !a.IsDynamic &&
+                        !string.IsNullOrWhiteSpace(a.FullName) &&
+                        prefixes.Any(p => a.FullName!.StartsWith(p)))
+                    .ToArray();
+            }
+
+            throw new ArgumentException("Invalid parameters for AddMidR(). Use: no arguments, Assembly[], or prefix strings.");
         }
 
         private static void RegisterHandlers(IServiceCollection services, Assembly[] assemblies, Type handlerInterface)
         {
-            var types = assemblies
-                .SelectMany(a => a.GetTypes())
+            var types = assemblies.SelectMany(a => a.GetTypes())
                 .Where(t => t.IsClass && !t.IsAbstract)
                 .ToList();
 
             foreach (var type in types)
             {
                 var interfaces = type.GetInterfaces()
-                    .Where(x => x.IsGenericType && x.GetGenericTypeDefinition() == handlerInterface);
+                    .Where(i =>
+                        i.IsGenericType &&
+                        i.GetGenericTypeDefinition() == handlerInterface);
 
-                foreach (var @interface in interfaces)
+                foreach (var iface in interfaces)
                 {
-                    services.AddTransient(@interface, type);
+                    services.AddTransient(iface, type);
                 }
             }
         }

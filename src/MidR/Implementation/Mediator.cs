@@ -6,36 +6,37 @@ using System.Threading.Tasks;
 
 namespace MidR.Implementation
 {
-    public sealed class Mediator : IMediator
+    public class Mediator : IMediator
     {
-        private const string EXECUTE_METHOD = "ExecuteAsync";
+        private readonly IServiceProvider _provider;
 
-        private readonly IServiceProvider _serviceProvider;
+        public Mediator(IServiceProvider provider)
+        {
+            _provider = provider;
+        }
 
-        public Mediator(IServiceProvider serviceProvider)
-            => _serviceProvider = serviceProvider;
-
-        public async Task<TResponse> DispatchAsync<TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken = default)
+        public async Task<TResponse> DispatchAsync <TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken = default)
         {
             var handlerType = typeof(IRequestHandler<,>).MakeGenericType(request.GetType(), typeof(TResponse));
-            var handler = _serviceProvider.GetService(handlerType)
-                ?? throw new InvalidOperationException($"No handler registered for request type {request.GetType()}");
+            var handler = _provider.GetService(handlerType);
+            if (handler == null)
+                throw new InvalidOperationException($"Handler not found for {request.GetType().Name}");
 
             return await (Task<TResponse>)handlerType
-                .GetMethod(EXECUTE_METHOD)!
+                .GetMethod("ExecuteAsync")!
                 .Invoke(handler, new object[] { request, cancellationToken })!;
         }
 
-        public async Task NotifyAsync<TNotification>(TNotification notification, CancellationToken cancellationToken = default)
+        public async Task NotifyAsync <TNotification>(TNotification notification, CancellationToken cancellationToken = default)
             where TNotification : INotification
         {
             var handlerType = typeof(INotificationHandler<>).MakeGenericType(notification.GetType());
-            var handlers = _serviceProvider.GetServices(handlerType);
+            var handlers = _provider.GetServices(handlerType);
 
             foreach (var handler in handlers)
             {
                 await (Task)handlerType
-                    .GetMethod(EXECUTE_METHOD)!
+                    .GetMethod("ExecuteAsync")!
                     .Invoke(handler, new object[] { notification, cancellationToken })!;
             }
         }
