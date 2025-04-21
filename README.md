@@ -9,9 +9,12 @@
 <p align="center"><strong>MidR</strong> is a lightweight and flexible open-source Mediator library for .NET.</p>
 
 <p align="center">
-  <a href="https://www.nuget.org/packages/MidR/">
-    <img src="https://img.shields.io/nuget/v/MediR?color=purple&amp;label=NuGet" alt="NuGet version" />
-  </a>
+        <a href="https://www.nuget.org/packages/MidR">
+            <img class="badge" src="https://img.shields.io/nuget/v/MidR?color=purple&label=NuGet" alt="NuGet version" />
+        </a>
+          <a href="https://www.nuget.org/packages/MidR">
+            <img class="badge" src="https://img.shields.io/nuget/dt/MidR?color=blue" alt="NuGet downloads" />
+        </a>
   <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License: MIT" />
   <img src="https://img.shields.io/badge/status-stable-brightgreen" alt="Project Status: Stable" />
 </p>
